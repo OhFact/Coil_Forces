@@ -13,15 +13,7 @@ from hsx_utilities import (
 
 
 def main():
-    print("=" * 60)
-    print("Calculating Forces in the {t, p, q} Frame (256 points)")
-    print("=" * 60)
-
     geom_file = 'HSX_coil_geometry.txt'
-    if not os.path.exists(geom_file):
-        raise FileNotFoundError(f"Missing {geom_file}. Please ensure it is in the directory.")
-
-    print("Loading multi-turn geometry...")
     xyz_coil, currents = read_coil_geometry(geom_file)
 
     coil_idx = 0
@@ -50,11 +42,11 @@ def main():
     p_hat = np.array(p_hat)
     q_hat = np.array(q_hat)
 
-    print("Projecting forces into the local frame...")
     F_t = np.sum(F_cartesian * t_hat, axis=1)
     F_p = np.sum(F_cartesian * p_hat, axis=1)
     F_q = np.sum(F_cartesian * q_hat, axis=1)
     max_ft = np.max(np.abs(F_t))
+
     print(f"-> Maximum Tangential Force (F_t): {max_ft:.3e} N/m (Should be ~0)")
     output_filename = f"hsx_forces_tpq_{n_points}_{coil_idx}.txt"
     print(f"Exporting data to {output_filename}...")
