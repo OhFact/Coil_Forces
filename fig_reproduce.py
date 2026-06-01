@@ -2,9 +2,6 @@
 Reproduce Figures 1, 6, 7, and 8 using multi-turn geometry smoothing.
 Now includes a high-resolution, smooth 3D rectangular surface rendering.
 
-Prerequisites:
-- hsx_utilities.py must be in the same directory.
-- HSX_coil_geometry.txt must be in the same directory.
 """
 
 import os
@@ -25,13 +22,9 @@ def main():
     os.makedirs(output_dir, exist_ok=True)
 
     geom_file = 'HSX_coil_geometry.txt'
-    if not os.path.exists(geom_file):
-        raise FileNotFoundError(f"Missing {geom_file}. Please ensure it is in the directory.")
 
-    # 1. Load and Simplify Geometry
-    print(f"Loading and simplifying geometry from {geom_file}...")
     xyz_coil, currents = read_coil_geometry(geom_file)
-    coil_idx = 22
+    coil_idx = 0
     Rx_full = xyz_coil[coil_idx, 0, :-1]
     Ry_full = xyz_coil[coil_idx, 1, :-1]
     Rz_full = xyz_coil[coil_idx, 2, :-1]
@@ -112,13 +105,12 @@ def main():
                    colors=cmap(norm(F_mag_3d[::skip])),
                    linewidth=1.5, arrow_length_ratio=0.4)
 
-    # Hack to get colorbar working with plot_surface facecolors
     sm = cm.ScalarMappable(cmap=cmap, norm=norm)
     sm.set_array([])
     cbar = fig1.colorbar(sm, ax=ax1, shrink=0.5, aspect=15)
     cbar.set_label('Self-Force Magnitude [kN/m]', fontsize=11)
 
-    # Automate Viewpoint using SVD (perpendicular to average plane)
+    # Viewpoint using SVD perpendicular to average plane
     coords = np.column_stack((Rx_3d, Ry_3d, Rz_3d))
     centroid = np.mean(coords, axis=0)
     centered_coords = coords - centroid
@@ -150,7 +142,6 @@ def main():
     Rx, Ry, Rz = simplify_multiturn_coil(Rx_full, Ry_full, Rz_full, n_turns=14, n_out=n_points)
     phi = np.linspace(0, 2 * np.pi, n_points, endpoint=False)
 
-    print("Computing base force profile for analytical plots...")
     F_base = run_force_profile(jnp.array(Rx), jnp.array(Ry), jnp.array(Rz),
                                jnp.array(phi), I_current, a_true, b_true, delta_true)
     F_np = np.array(F_base)
@@ -211,9 +202,6 @@ def main():
     fig6.savefig(os.path.join(output_dir, f'Fig6_{coil_idx}.png'), bbox_inches='tight')
     plt.close(fig6)
 
-    # -------------------------------------------------------------------------
-    # Figure 7: Thickness Sweep vs Force
-    # -------------------------------------------------------------------------
     print("Generating Figure 7 (Thickness Sweep)...")
     phi_star = int(np.argmax(F_np[:, 2]))
     a_list = [1e-3, 1e-2, 1e-1]
