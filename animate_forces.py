@@ -6,7 +6,6 @@ import matplotlib.cm as cm
 from matplotlib.colors import Normalize
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-# Import core physics and styling utilities from your framework
 from hsx_utilities import (
     get_geom, run_force_profile, compute_delta, read_coil_geometry,
     simplify_multiturn_coil, style_axes
@@ -15,7 +14,6 @@ from hsx_utilities import (
 
 def main():
     geom_file = 'HSX_coil_geometry.txt'
-    print(f"Loading and simplifying geometry from {geom_file}...")
     xyz_coil, currents = read_coil_geometry(geom_file)
     coil_idx = 0
     Rx_full = xyz_coil[coil_idx, 0, :-1]
@@ -69,10 +67,6 @@ def main():
     face_colors = cmap(norm(F_mag_closed[:-1]))
     surface_colors = np.tile(face_colors[:, None, :], (1, 4, 1))
 
-    # =========================================================================
-    # Setup Figure and Subplots
-    # =========================================================================
-    print("Setting up animation...")
     fig = plt.figure(figsize=(15, 6), dpi=120)
 
     # Left Subplot: 3D Coil
@@ -93,7 +87,7 @@ def main():
     ax1.set_xlabel("X [m]")
     ax1.set_ylabel("Y [m]")
     ax1.set_zlabel("Z [m]")
-    ax1.axis('off')  # Cleaner look for the GIF
+    ax1.axis('off')
 
     max_range = np.array([Rx.max() - Rx.min(), Ry.max() - Ry.min(), Rz.max() - Rz.min()]).max() / 2.0
     ax1.set_xlim(centroid[0] - max_range, centroid[0] + max_range)
@@ -109,12 +103,10 @@ def main():
     ax2.axhline(0, color='gray', ls='--', lw=1)
     style_axes(ax2)
 
-    # =========================================================================
-    # Animation Trackers
-    # =========================================================================
+
     # 3D Trackers (Dot and Quiver)
     point3d, = ax1.plot([], [], [], 'ro', markersize=10, zorder=5)
-    quiver_container = [None]  # Use a list to pass the reference into the animate function
+    quiver_container = [None]
 
     # 2D Trackers (Dot and Line)
     point2d, = ax2.plot([], [], 'ro', markersize=10)
@@ -134,7 +126,7 @@ def main():
             quiver_container[0].remove()
 
         f_dir = F[frame] / (F_mag_kN[frame] * 1000.0)
-        s_scale = 0.08  # Make the tracking arrow nice and large
+        s_scale = 0.12  # Make the tracking arrow nice and large
         quiver_container[0] = ax1.quiver(ox, oy, oz,
                                          f_dir[0] * s_scale,
                                          f_dir[1] * s_scale,
@@ -154,7 +146,7 @@ def main():
 
     fps = 15
     total_frames = len(phi)  # 256 frames
-    print(f"Rendering GIF ({total_frames} frames at {fps} FPS)... This may take a minute.")
+    print(f"Rendering GIF ({total_frames} frames at {fps} FPS)")
 
     anim = FuncAnimation(fig, animate, frames=total_frames, interval=1000 / fps, blit=False)
 
