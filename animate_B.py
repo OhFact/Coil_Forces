@@ -1,10 +1,6 @@
 """
 Generate a smooth animated GIF showing the 2D Internal Magnetic Field
 (|B| and Bz) as we travel around the 3D rectangular HSX coil.
-
-Prerequisites:
-- hsx_utilities.py (the fully updated version) must be in the same directory.
-- HSX_coil_geometry.txt must be in the same directory.
 """
 
 import os
@@ -15,7 +11,6 @@ import matplotlib.cm as cm
 from matplotlib.colors import Normalize, TwoSlopeNorm
 from matplotlib.animation import FuncAnimation, PillowWriter
 
-# Import core physics and styling utilities from your framework
 from hsx_utilities import (
     get_geom, B_reg_centerline, B_internal_parts, compute_delta,
     read_coil_geometry, simplify_multiturn_coil, style_axes
@@ -23,15 +18,12 @@ from hsx_utilities import (
 
 
 def main():
-    # Setup output directory
     output_dir = "results"
     os.makedirs(output_dir, exist_ok=True)
 
     geom_file = 'HSX_coil_geometry.txt'
-    if not os.path.exists(geom_file):
-        raise FileNotFoundError(f"Missing {geom_file}. Please ensure it is in the directory.")
 
-    print(f"Loading and simplifying geometry from {geom_file}...")
+    print(f"Loading from {geom_file}...")
     xyz_coil, currents = read_coil_geometry(geom_file)
     coil_idx = 5
     Rx_full = xyz_coil[coil_idx, 0, :-1]
@@ -74,7 +66,6 @@ def main():
         Y[:, i] = corner[:, 1]
         Z[:, i] = corner[:, 2]
 
-    # Close the toroidal loop so there are no gaps
     X_closed = np.vstack([X, X[0:1, :]])
     Y_closed = np.vstack([Y, Y[0:1, :]])
     Z_closed = np.vstack([Z, Z[0:1, :]])
@@ -88,7 +79,6 @@ def main():
 
     u_jax, v_jax = jnp.array(uu), jnp.array(vv)
 
-    print("Scanning global min/max field bounds to stabilize colorbars...")
     global_bmag_max = 0.0
     global_bz_max_abs = 0.0
 
@@ -113,7 +103,7 @@ def main():
     print("Setting up animation canvas...")
     fig = plt.figure(figsize=(16, 6), dpi=120)
 
-    # Left Subplot: 3D Coil Tracker
+    # 3D Coil Tracker
     ax1 = fig.add_subplot(131, projection='3d')
 
     # Plot the smooth rectangular surface
@@ -151,7 +141,7 @@ def main():
     x_cm = vv * (b_true / 2.0) * 100.0
     y_cm = uu * (a_true / 2.0) * 100.0
 
-    # Draw static colorbars using ScalarMappables (so they don't redraw every frame)
+    # Draw static colorbars using ScalarMappables
     sm_bmag = cm.ScalarMappable(cmap='viridis', norm=Normalize(vmin=0, vmax=global_bmag_max))
     sm_bmag.set_array([])
     fig.colorbar(sm_bmag, ax=ax2, label='|B| [T]', shrink=0.8)
@@ -206,7 +196,7 @@ def main():
 
     fps = 16
     total_frames = n_points
-    print(f"Rendering {total_frames} frames at {fps} FPS...")
+    print(f"Rendering {total_frames} frames at {fps} FPS")
 
     anim = FuncAnimation(fig, animate, frames=total_frames, interval=1000 / fps, blit=False)
 
