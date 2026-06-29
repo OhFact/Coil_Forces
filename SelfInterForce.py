@@ -74,12 +74,12 @@ def main():
     F_inter = current_A * np.cross(t_hat, B_inter_total)
     F_tot = F_self + F_inter
 
-    # F_p = F dot p_hat (Normal outward force pushing on the wide face 'a')
+    # F_p = F dot p_hat 
     F_self_p  = np.sum(F_self  * p_hat, axis=1)
     F_inter_p = np.sum(F_inter * p_hat, axis=1)
     F_tot_p   = np.sum(F_tot   * p_hat, axis=1)
 
-    # F_q = F dot q_hat (Binormal lateral shear force pushing on narrow face 'b')
+    # F_q = F dot q_hat 
     F_self_q  = np.sum(F_self  * q_hat, axis=1)
     F_inter_q = np.sum(F_inter * q_hat, axis=1)
     F_tot_q   = np.sum(F_tot   * q_hat, axis=1)
@@ -91,7 +91,7 @@ def main():
     axes[0].plot(phi, F_self_p / 1000, 'b--', lw=2, label=r'Self Force ($F_p$)')
     axes[0].plot(phi, F_inter_p / 1000, 'r--', lw=2, label=r'Inter-coil Force ($F_p$)')
     axes[0].plot(phi, F_tot_p / 1000, 'k-', lw=2.5, alpha=0.9, label=r'Total Force ($F_p$)')
-    axes[0].set_title(r'Normal Force ($F_p$) Pushing on Wide Face (Outward Bursting)', fontsize=14)
+    axes[0].set_title(r'Normal Force ($F_p$)', fontsize=14)
     axes[0].set_ylabel('Force [kN/m]', fontsize=12)
     axes[0].axhline(0, color='gray', ls=':', lw=1.5)
     axes[0].legend(loc='upper right')
@@ -101,7 +101,7 @@ def main():
     axes[1].plot(phi, F_self_q / 1000, 'b--', lw=2, label=r'Self Force ($F_q$)')
     axes[1].plot(phi, F_inter_q / 1000, 'r--', lw=2, label=r'Inter-coil Force ($F_q$)')
     axes[1].plot(phi, F_tot_q / 1000, 'k-', lw=2.5, alpha=0.9, label=r'Total Force ($F_q$)')
-    axes[1].set_title(r'Binormal Force ($F_q$) Pushing on Narrow Face (Lateral Shear)', fontsize=14)
+    axes[1].set_title(r'Binormal Force ($F_q$)', fontsize=14)
     axes[1].set_ylabel('Force [kN/m]', fontsize=12)
     axes[1].set_xlabel(r'Location along the coil $\phi$ [rad]', fontsize=12)
     axes[1].axhline(0, color='gray', ls=':', lw=1.5)
