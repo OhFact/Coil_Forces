@@ -175,32 +175,32 @@ def A_reg_centerline(r, rp, rpp, t_hat, kappa, I, a, b, delta, phi):
     dphi = phi[1] - phi[0]
     rp2 = jnp.sum(rp ** 2, axis=1)
 
-    pref = (mu_0 * I) / (8.0 * jnp.pi)
-    logt = -3.0 + jnp.log(64.0 * rp2 / (delta * a * b))
+    pref = (mu_0 * I) / (4.0 * jnp.pi)
+    logt = jnp.log(64.0 * rp2 / (delta * a * b))
     Aloc = pref * logt[:, None] * t_hat
 
-    # CORRECTED VMAP: Passing explicit evaluation points
-    def single_obs_A(r_obs, rp2_obs, phi_obs):
+    def single_obs_A(r_obs, rp_obs, rp2_obs, phi_obs):
         diff = r_obs - r
         term1_num = rp
         term1_den = jnp.sqrt(jnp.sum(diff ** 2, axis=1) + delta * a * b)
 
         dph = phi_obs - phi
-        term2_num = rpp * (1.0 - jnp.cos(dph))[:, None]
+        term2_num = rp_obs[None, :]  # Tangent vector at the observation point
         term2_den = jnp.sqrt((2.0 - 2.0 * jnp.cos(dph)) * rp2_obs + delta * a * b)
 
         safe_term1_den = jnp.where(term1_den == 0, 1.0, term1_den)
         safe_term2_den = jnp.where(term2_den == 0, 1.0, term2_den)
 
         integ1 = term1_num / safe_term1_den[:, None]
-        integ2 = term2_num / safe_term2_den[:, None]
+        integ2 = -term2_num / safe_term2_den[:, None]  # Subtract subtraction term
 
         return jnp.sum(integ1 + integ2, axis=0) * dphi
 
-    Aint_unscaled = jax.vmap(single_obs_A)(r, rp2, phi)
-    Aint = (mu_0 * I / (4.0 * jnp.pi)) * Aint_unscaled
+    Aint_unscaled = jax.vmap(single_obs_A)(r, rp, rp2, phi)
+    Aint = pref * Aint_unscaled
 
     return Aloc + Aint
+
 
 
 @jit
@@ -222,7 +222,7 @@ def self_inductance(r, rp, rpp, t_hat, kappa, I, a, b, delta, phi):
     dphi = phi[1] - phi[0]
     integrand = jnp.sum(A * t_hat, axis=1) * rp_norm
     L_raw = jnp.sum(integrand) * dphi / I
-    return (2.0 / jnp.pi) * L_raw
+    return L_raw 
 
 
 @jit
