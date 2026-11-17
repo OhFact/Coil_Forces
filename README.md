@@ -4,7 +4,7 @@ This code was written in order to study the forces and magnetic fields generated
 ### Executing program
 First, create a "results" and a "results_txt" folder to run this code  
   
-Default inputs are 150000 Amperes of current running through the HSX coils in this repo, alongside a rectangular cross section 0.3 x 0.06 m  
+Default inputs are 150000 Amperes of current running through the HSX coils in this repo, alongside a rectangular cross section 0.13 x 0.06 m  
   
 hsx_utilities > Functions for loading file geometry, running the force calculations, plotting, etc.  
 fig_reproduce > Reproduces all the plots of the original paper this code is based on  

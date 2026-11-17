@@ -140,8 +140,11 @@ def B_internal_parts(p_hat, q_hat, b_hat, kappa, k1, k2, I, a, b, delta, u, v):
             temp = jnp.maximum(temp, 1e-15)
             log_factor = jnp.log(temp)
 
-            atan_bV_aU = jnp.arctan2(b * V, a * U)
-            atan_aU_bV = jnp.arctan2(a * U, b * V)
+            # Paper eq. (20) uses the principal-branch arctangent of a ratio.
+            # arctan2 differs by +/-pi where a*U < 0, which injects a jump
+            # discontinuity into B_kappa across U = 0.
+            atan_bV_aU = jnp.arctan((b * V) / (a * U))
+            atan_aU_bV = jnp.arctan((a * U) / (b * V))
 
             K_p = (
                     -2.0 * U * V * (-k2) * log_factor
@@ -243,12 +246,7 @@ def self_inductance_2D(r, rp, delta, a, b, phi):
 
 @jit
 def compute_delta(a, b):
-    k = ((4.0 * b) / (3.0 * a)) * jnp.arctan(a / b) \
-        + ((4.0 * a) / (3.0 * b)) * jnp.arctan(b / a) \
-        + (b ** 2 / (6.0 * a ** 2)) * jnp.log(b / a) \
-        + (a ** 2 / (6.0 * b ** 2)) * jnp.log(a / b) \
-        - ((a ** 4 - 6.0 * a ** 2 * b ** 2 + b ** 4) / (6.0 * a ** 2 * b ** 2)) * jnp.log((a / b) + (b / a))
-    return jnp.exp(-25.0 / 6.0 + k)
+    return jnp.exp(-25.0 / 6.0 + compute_k(a, b))
 
 
 @jit
@@ -286,10 +284,14 @@ def read_coil_geometry(filename, nskipline=3):
         cbefore = dat[3]
 
     npt = int(cc_arr[0])
-    xyz_coil = xyz_coil[:, :, 0:npt]
-    ncoil = np.sum(current != 0)
-    xyz_coil = xyz_coil[0:ncoil, :, :]
-    current = current[0:ncoil]
+    ncoil = int(np.sum(current != 0))
+
+    # Keep only the full-length (14-turn modular) coils. The auxiliary coils
+    # later in the file have far fewer points and would otherwise be returned
+    # zero-padded out to npt.
+    keep = np.where(cc_arr[0:ncoil] == npt)[0]
+    xyz_coil = xyz_coil[keep, :, 0:npt]
+    current = current[keep]
     return (xyz_coil, current)
 
 

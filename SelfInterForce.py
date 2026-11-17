@@ -17,11 +17,14 @@ from hsx_utilities import (
 def compute_B_intercoil(r_target, r_source, I_source):
     #intercoil magnetic field
     mu_0 = 4.0 * jnp.pi * 1e-7
-    diff = r_target[:, None, :] - r_source[None, :, :]
-    dist_sq = jnp.sum(diff**2, axis=2)
-    dist_inv3 = jnp.where(dist_sq > 1e-12, dist_sq**(-1.5), 0.0)
+    r_next = jnp.roll(r_source, -1, axis=0)
+    dr_source = r_next - r_source
 
-    dr_source = jnp.roll(r_source, -1, axis=0) - r_source
+    # Evaluate each segment at its midpoint (second-order accurate)
+    diff = r_target[:, None, :] - (0.5 * (r_source + r_next))[None, :, :]
+    dist_sq = jnp.sum(diff ** 2, axis=2)
+    dist_inv3 = jnp.where(dist_sq > 1e-12, dist_sq ** (-1.5), 0.0)
+
     cross_prod = jnp.cross(dr_source[None, :, :], diff)
 
     integrand = cross_prod * dist_inv3[:, :, None]
@@ -44,6 +47,10 @@ def main():
         # Filter out trailing zeros
         valid = ~((Rx_f == 0.0) & (Ry_f == 0.0) & (Rz_f == 0.0))
         Rx_f, Ry_f, Rz_f = Rx_f[valid], Ry_f[valid], Rz_f[valid]
+
+        # Chop off the closing duplicate point so the 14 turns stay aligned
+        if len(Rx_f) > 1 and np.allclose([Rx_f[-1], Ry_f[-1], Rz_f[-1]], [Rx_f[0], Ry_f[0], Rz_f[0]]):
+            Rx_f, Ry_f, Rz_f = Rx_f[:-1], Ry_f[:-1], Rz_f[:-1]
 
         # Use multiturn simplifier
         rx, ry, rz = simplify_multiturn_coil(Rx_f, Ry_f, Rz_f, n_turns=14,
@@ -74,12 +81,12 @@ def main():
     F_inter = current_A * np.cross(t_hat, B_inter_total)
     F_tot = F_self + F_inter
 
-    # F_p = F dot p_hat 
+    # F_p = F dot p_hat (normal force on the wide face 'a')
     F_self_p  = np.sum(F_self  * p_hat, axis=1)
     F_inter_p = np.sum(F_inter * p_hat, axis=1)
     F_tot_p   = np.sum(F_tot   * p_hat, axis=1)
 
-    # F_q = F dot q_hat 
+    # F_q = F dot q_hat (binormal shear force on the narrow face 'b')
     F_self_q  = np.sum(F_self  * q_hat, axis=1)
     F_inter_q = np.sum(F_inter * q_hat, axis=1)
     F_tot_q   = np.sum(F_tot   * q_hat, axis=1)
@@ -91,7 +98,7 @@ def main():
     axes[0].plot(phi, F_self_p / 1000, 'b--', lw=2, label=r'Self Force ($F_p$)')
     axes[0].plot(phi, F_inter_p / 1000, 'r--', lw=2, label=r'Inter-coil Force ($F_p$)')
     axes[0].plot(phi, F_tot_p / 1000, 'k-', lw=2.5, alpha=0.9, label=r'Total Force ($F_p$)')
-    axes[0].set_title(r'Normal Force ($F_p$)', fontsize=14)
+    axes[0].set_title(r'Normal Force ($F_p$) on Wide Face (Outward Bursting)', fontsize=14)
     axes[0].set_ylabel('Force [kN/m]', fontsize=12)
     axes[0].axhline(0, color='gray', ls=':', lw=1.5)
     axes[0].legend(loc='upper right')
@@ -101,7 +108,7 @@ def main():
     axes[1].plot(phi, F_self_q / 1000, 'b--', lw=2, label=r'Self Force ($F_q$)')
     axes[1].plot(phi, F_inter_q / 1000, 'r--', lw=2, label=r'Inter-coil Force ($F_q$)')
     axes[1].plot(phi, F_tot_q / 1000, 'k-', lw=2.5, alpha=0.9, label=r'Total Force ($F_q$)')
-    axes[1].set_title(r'Binormal Force ($F_q$)', fontsize=14)
+    axes[1].set_title(r'Binormal Force ($F_q$) on Narrow Face (Lateral Shear)', fontsize=14)
     axes[1].set_ylabel('Force [kN/m]', fontsize=12)
     axes[1].set_xlabel(r'Location along the coil $\phi$ [rad]', fontsize=12)
     axes[1].axhline(0, color='gray', ls=':', lw=1.5)

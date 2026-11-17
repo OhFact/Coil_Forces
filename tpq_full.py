@@ -17,11 +17,14 @@ from hsx_utilities import (
 def compute_B_intercoil(r_target, r_source, I_source):
     #intercoil magnetic field
     mu_0 = 4.0 * jnp.pi * 1e-7
-    diff = r_target[:, None, :] - r_source[None, :, :]
+    r_next = jnp.roll(r_source, -1, axis=0)
+    dr_source = r_next - r_source
+
+    # Evaluate each segment at its midpoint (second-order accurate)
+    diff = r_target[:, None, :] - (0.5 * (r_source + r_next))[None, :, :]
     dist_sq = jnp.sum(diff ** 2, axis=2)
     dist_inv3 = jnp.where(dist_sq > 1e-12, dist_sq ** (-1.5), 0.0)
 
-    dr_source = jnp.roll(r_source, -1, axis=0) - r_source
     cross_prod = jnp.cross(dr_source[None, :, :], diff)
 
     integrand = cross_prod * dist_inv3[:, :, None]
