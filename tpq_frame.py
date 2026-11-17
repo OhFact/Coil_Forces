@@ -48,6 +48,7 @@ def main():
     max_ft = np.max(np.abs(F_t))
 
     print(f"-> Maximum Tangential Force (F_t): {max_ft:.3e} N/m (Should be ~0)")
+    os.makedirs("results_txt", exist_ok=True)
     output_filename = f"hsx_forces_tpq_{n_points}_{coil_idx}.txt"
     print(f"Exporting data to {output_filename}...")
 

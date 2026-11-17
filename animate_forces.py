@@ -150,6 +150,7 @@ def main():
 
     anim = FuncAnimation(fig, animate, frames=total_frames, interval=1000 / fps, blit=False)
 
+    os.makedirs("results", exist_ok=True)
     output_file = f'results/coil{coil_idx}.gif'
     writer = PillowWriter(fps=fps)
     anim.save(output_file, writer=writer)
